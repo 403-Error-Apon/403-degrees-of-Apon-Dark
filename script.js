@@ -11,6 +11,33 @@
   const themeOverlay = $("#themeOverlay");
   const markerToggle = $("#markerToggle");
   const markerState = $("#markerState");
+  const themeToggle = $("#themeToggle");
+  const themeToggleIcon = themeToggle.querySelector(".theme-toggle-icon");
+  const themeToggleLabel = themeToggle.querySelector(".theme-toggle-label");
+
+  function applyColorMode(theme, persist = true) {
+    const dark = theme === "dark";
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    themeToggle.setAttribute("aria-pressed", String(dark));
+    themeToggle.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+    themeToggle.title = dark ? "Switch to light mode" : "Switch to dark mode";
+    themeToggleIcon.textContent = dark ? "☼" : "☾";
+    themeToggleLabel.textContent = dark ? "light mode" : "dark mode";
+    const themeColorMeta = $("#themeColorMeta");
+    if (themeColorMeta) themeColorMeta.content = dark ? "#171a18" : "#f4f1e9";
+    if (persist) {
+      try { localStorage.setItem("aponColorMode", dark ? "dark" : "light"); } catch (_) {}
+    }
+    window.dispatchEvent(new CustomEvent("apon-theme-change", { detail: { theme: dark ? "dark" : "light" } }));
+  }
+  applyColorMode(document.documentElement.dataset.theme === "dark" ? "dark" : "light", false);
+  themeToggle.addEventListener("click", () => {
+    applyColorMode(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+    // Close the compact menu after choosing a theme on mobile.
+    const nav = $("#siteNav");
+    const menu = $("#menuButton");
+    if (nav && menu) { nav.classList.remove("is-open"); menu.setAttribute("aria-expanded", "false"); }
+  });
   let secretClickCount = 0;
   let secretResetTimer = null;
   let themeActive = false;
@@ -152,7 +179,12 @@
     if (type === "button") openModal({ eyebrow: "OBJECT 002 / INCIDENT REPORT", title: "You clicked it twice.", body: "There is no lesson here. Sometimes a button just needs to be clicked. I'm proud of you for following your heart.", icon: "↗" });
     if (type === "mystery") openModal({ eyebrow: "OBJECT 004 / CASE STILL OPEN", title: "Still a mystery.", body: "The paperwork is pending. The investigators are confused. The doodle remains at large. Maybe we should leave it that way.", icon: "?" });
   }));
-  $("#smileyButton").addEventListener("click", () => showWatcherMessage("You found the other smiley. This is becoming a pattern."));
+  $("#smileyButton").addEventListener("click", () => {
+    const cardSmiley = $("#smileyButton");
+    cardSmiley.classList.add("is-speaking");
+    window.setTimeout(() => cardSmiley.classList.remove("is-speaking"), 3000);
+    showWatcherMessage("You found the other smiley. This is becoming a pattern.");
+  });
   $("#normalButton").addEventListener("click", () => {
     showToast("I tried to act normal. Failed immediately.");
     document.body.classList.add("tiny-shake");
@@ -191,8 +223,12 @@
   function showWatcherMessage(message, duration = 3400) {
     watcherBubble.textContent = message;
     watcherBubble.classList.remove("is-hidden");
+    fixedWatcher.classList.add("is-speaking");
     window.clearTimeout(bubbleTimer);
-    bubbleTimer = window.setTimeout(() => watcherBubble.classList.add("is-hidden"), duration);
+    bubbleTimer = window.setTimeout(() => {
+      watcherBubble.classList.add("is-hidden");
+      fixedWatcher.classList.remove("is-speaking");
+    }, duration);
   }
   function watcherLooksAway() {
     watcherIsAvoiding = true;
@@ -558,6 +594,108 @@
     }
   });
 
+  // Dark-mode signal glitches: brief, a little punchier, and still localized.
+  (() => {
+    const candidates = [
+      { selector: ".card-smiley", weight: 2 },
+      { selector: ".brand-badge", weight: 1 },
+      { selector: ".interest-sticker", weight: 2 },
+      { selector: ".section-stamp", weight: 2 },
+      { selector: ".doodle-circle", weight: 2 },
+      { selector: ".footer-403", weight: 1 }
+    ];
+    let timer = 0;
+    let heroTimer = 0;
+    const isDark = () => document.documentElement.dataset.theme === "dark";
+    const canAnimate = () => isDark() && !document.hidden && !modal.open && !themeActive;
+    function pulse(target, duration = 620) {
+      if (!target) return;
+      target.classList.remove("signal-glitch");
+      void target.offsetWidth;
+      target.classList.add("signal-glitch");
+      window.setTimeout(() => target.classList.remove("signal-glitch"), duration);
+    }
+    function scheduleGlitch() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (canAnimate()) {
+          const pool = candidates.flatMap(item => Array(item.weight).fill(item.selector));
+          const selector = pool[Math.floor(Math.random() * pool.length)];
+          pulse(document.querySelector(selector));
+        }
+        scheduleGlitch();
+      }, 5200 + Math.random() * 7600);
+    }
+    // The large hero 403 panel has its own three-second dark-mode rhythm.
+    function scheduleHeroGlitch() {
+      window.clearTimeout(heroTimer);
+      heroTimer = window.setTimeout(() => {
+        if (canAnimate()) pulse(document.querySelector(".poster-stage"), 520);
+        scheduleHeroGlitch();
+      }, 3000);
+    }
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) { scheduleGlitch(); scheduleHeroGlitch(); }
+      else { window.clearTimeout(timer); window.clearTimeout(heroTimer); }
+    });
+    window.addEventListener("apon-theme-change", () => {
+      scheduleGlitch();
+      scheduleHeroGlitch();
+    });
+    scheduleGlitch();
+    scheduleHeroGlitch();
+  })();
+
+  // Three of the ten obsession cards glitch at once, chosen randomly each cycle.
+  (() => {
+    const cards = $$(".interest-note");
+    let cycleTimer = 0;
+    let endTimer = 0;
+    const isDark = () => document.documentElement.dataset.theme === "dark";
+    const clearCards = () => cards.forEach(card => card.classList.remove("obsession-glitch"));
+    const stop = () => {
+      window.clearTimeout(cycleTimer);
+      window.clearTimeout(endTimer);
+      clearCards();
+    };
+    const shuffle = list => {
+      const copy = list.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
+    function schedule(delay = 1800 + Math.random() * 3400) {
+      window.clearTimeout(cycleTimer);
+      cycleTimer = window.setTimeout(() => {
+        if (!isDark() || document.hidden || modal.open || themeActive || cards.length < 3) {
+          schedule(900 + Math.random() * 1200);
+          return;
+        }
+        clearCards();
+        shuffle(cards).slice(0, 3).forEach(card => {
+          void card.offsetWidth;
+          card.classList.add("obsession-glitch");
+        });
+        endTimer = window.setTimeout(() => {
+          clearCards();
+          // At least two seconds of calm, followed by a little random timing variation.
+          schedule(2000 + Math.random() * 2200);
+        }, 820);
+      }, delay);
+    }
+    window.addEventListener("apon-theme-change", event => {
+      stop();
+      if (event.detail?.theme === "dark") schedule(1300 + Math.random() * 3200);
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stop();
+      else if (isDark()) { stop(); schedule(900 + Math.random() * 2300); }
+    });
+    if (isDark()) schedule();
+  })();
+
   // Three clicks on the 403 badge reveal a silly full-screen error page.
   function activateTheme() {
     if (themeActive) return;
@@ -649,7 +787,16 @@
     let nextId = 1, tapCount = 0;
     const particles = [];
     const bursts = [];
-    const ink = "#1e211b"; // Match the graph-paper grid and the page's ink.
+    let ink = document.documentElement.dataset.theme === "dark" ? "#b8c5b0" : "#1e211b"; // Match the current theme's ink.
+    let glowCenter = document.documentElement.dataset.theme === "dark" ? "rgba(184,197,176,0.20)" : "rgba(30,33,27,0.24)";
+    let glowOuter = document.documentElement.dataset.theme === "dark" ? "rgba(184,197,176,0)" : "rgba(30,33,27,0)";
+    window.addEventListener("apon-theme-change", event => {
+      const dark = event.detail?.theme === "dark";
+      ink = dark ? "#b8c5b0" : "#1e211b";
+      glowCenter = dark ? "rgba(184,197,176,0.20)" : "rgba(30,33,27,0.24)";
+      glowOuter = dark ? "rgba(184,197,176,0)" : "rgba(30,33,27,0)";
+      draw(performance.now());
+    });
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const random = (min, max) => min + Math.random() * (max - min);
     const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -834,8 +981,8 @@
         if (p.alpha < 0.01) continue;
         if (p.radius > 7.5) {
           const glow = ctx.createRadialGradient(p.x, p.y, p.radius * 0.12, p.x, p.y, p.radius * 2.35);
-          glow.addColorStop(0, "rgba(30,33,27,0.24)");
-          glow.addColorStop(1, "rgba(30,33,27,0)");
+          glow.addColorStop(0, glowCenter);
+          glow.addColorStop(1, glowOuter);
           ctx.fillStyle = glow;
           ctx.globalAlpha = p.alpha * 0.48;
           ctx.beginPath();

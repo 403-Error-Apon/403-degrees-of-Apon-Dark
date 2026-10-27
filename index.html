@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<meta content="#f4f1e9" name="theme-color"/>
+<meta content="#f4f1e9" id="themeColorMeta" name="theme-color"/>
 <meta content="403 degrees of Apon — a little corner of the internet with too many highlights, suspicious smileys, and questionable side quests." name="description"/>
 <meta content="403 degrees of Apon" property="og:title"/>
 <meta content="A tiny internet corner. Please touch the questionable things." property="og:description"/>
@@ -14,6 +14,13 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<script>
+  (() => {
+    let saved = "light";
+    try { saved = localStorage.getItem("aponColorMode") || "light"; } catch (_) {}
+    document.documentElement.dataset.theme = saved === "dark" ? "dark" : "light";
+  })();
+  </script>
 <link href="styles.css" rel="stylesheet"/>
 </head>
 <body>
@@ -32,6 +39,7 @@
 <a href="#shelf">the shelf</a>
 <a href="#interests">my little obsessions</a>
 <a href="#message">leave a note</a>
+<button aria-label="Switch to dark mode" aria-pressed="false" class="theme-toggle" id="themeToggle" title="Switch to dark mode" type="button"><span aria-hidden="true" class="theme-toggle-icon">☾</span><span class="theme-toggle-label">dark mode</span></button>
 <button aria-pressed="false" class="marker-toggle" id="markerToggle" title="Turn highlight mode on or off" type="button"><span aria-hidden="true">✎</span> marker mode <i id="markerState">off</i></button>
 </nav>
 </header>
@@ -94,11 +102,12 @@
 <div class="manifesto-label">A VERY SHORT DISCLAIMER</div>
 <p>This website contains <span class="marker marker-yellow" data-highlight="">unnecessary objects</span>, <span class="marker marker-pink" data-highlight="">questionable confidence</span>, and an unreasonable amount of affection for a good <span class="marker marker-blue" data-highlight="">click.</span> Nothing here is that serious,,<br/><span class="manifesto-aside">(Except the margins. I measured those)</span></p>
 <span aria-hidden="true" class="manifesto-hand">(mostly)</span>
-<svg aria-hidden="true" class="chess-doodle chess-doodle-knight" viewBox="0 0 72 84" focusable="false">
-  <path d="M17 68h43l-4-6-7-4-1-9 8-9-3-9-11-5-4-10-9 2-2 8-9 5 3 8-6 7 3 8-5 8 4 6z"/>
-  <path d="M24 57l27 1M21 65h39M26 47l22 1M28 36l13 3M36 29l-1-7M41 24l7-3M32 33l-4 7"/>
-  <path d="M42 17l8-5 4 6-5 6M17 74q20 4 43 0"/>
-  <circle cx="43" cy="30" r="1.4" fill="currentColor" stroke="none"/>
+<svg aria-hidden="true" class="chess-doodle chess-doodle--knight" viewBox="0 0 100 100" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3">
+    <path d="M23 78h56l-7-8-4-12-5-9 8-11-4-13-13-3-7-9-8 13-9 6 5 10-7 12-2 15z"/>
+    <path d="M39 24l12 6-3 10 12-3M30 49q17 8 38-1M27 63q19 6 43 0M23 72h49M31 82h45"/>
+    <path d="M53 18l7-7 7 3-2 9M37 33l-8-2" stroke-dasharray="2 4"/>
+  </g>
 </svg>
 </section>
 <section class="oddities-section" id="oddities">
@@ -281,11 +290,6 @@
 <p class="hidden-whisper" tabindex="0">the shelf judges you silently. it's seen your watch history.</p>
 <span class="shelf-note">real covers coming eventually · the placeholders are doing their best <span aria-hidden="true">☺</span></span>
 </div>
-<svg aria-hidden="true" class="chess-doodle chess-doodle-rook" viewBox="0 0 66 78" focusable="false">
-  <path d="M14 12h10v7h8v-7h10v7h8v-7h6v16l-5 5 3 25 6 7v4H8v-4l6-7 3-25-5-5z"/>
-  <path d="M14 28h42M17 33h36M18 44h34M17 58h36M11 66h52M22 39l-2 12M43 39l2 12"/>
-  <path d="M21 8v5M36 8v5M51 8v5"/>
-</svg>
 <!-- To use real covers later: replace each <span class="tile-art">…</span> with
              <img src="assets/shelf/your-cover.jpg" alt="Title"> inside the same button. -->
 </section>
@@ -336,13 +340,15 @@
 <a class="mail-fallback" hidden="" href="mailto:403_error_4_u@proton.me?subject=A%20note%20from%20403%20degrees" id="mailFallback">Open an email draft instead ↗</a>
 </form>
 </section>
-<section aria-label="One last thing" class="final-note"><span aria-hidden="true" class="final-star">✳</span><p>if you've made it this far,, you need a hobby!!</p><span class="final-note-small">(i say this with love)</span><button aria-label="One last unnecessary click" id="finalNudge" type="button">click me?</button>
-<svg aria-hidden="true" class="chess-doodle chess-doodle-bishop" viewBox="0 0 58 82" focusable="false">
-  <path d="M29 8c-7 0-12 5-12 11 0 5 3 9 7 11l-4 9 8 8 8-8-4-9c5-3 7-7 7-11C39 13 35 8 29 8z"/>
-  <path d="M22 39l-4 11-6 9 4 5h26l4-5-6-9-4-11M20 51h18M16 59h26M13 67h32M10 73h38"/>
-  <path d="M23 14l12 11M34 14L22 25M29 48v10"/>
+<section aria-label="One last thing" class="final-note"><span aria-hidden="true" class="final-star">✳</span><p>if you've made it this far,, you need a hobby!!</p><span class="final-note-small">(i say this with love)</span>
+<svg aria-hidden="true" class="chess-doodle chess-doodle--rook" viewBox="0 0 100 100" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3">
+    <path d="M26 22l2 10-4 8 5 8-3 23-8 9v5h62v-5l-8-9-3-23 5-8-4-8 2-10-8 4-5-8-7 8-7-8-5 8z"/>
+    <path d="M28 32q21 5 44 0M24 40q25 7 52 0M29 48h42M27 65h46M20 75h60M15 83h70"/>
+    <path d="M39 18l-5-7-7 4 2 9M63 18l5-7 7 4-2 9" stroke-dasharray="2 4"/>
+  </g>
 </svg>
-</section>
+<button aria-label="One last unnecessary click" id="finalNudge" type="button">click me?</button></section>
 </main>
 <footer class="site-footer">
 <button aria-label="Tap three times for a secret" class="footer-403" id="secret403" type="button">403</button>
@@ -352,7 +358,7 @@
 </div>
 <button aria-describedby="watcherBubble" aria-label="Suspicious floating smiley. Click to talk." class="fixed-watcher" id="fixedWatcher" type="button">
 <span aria-live="polite" class="watcher-bubble is-hidden" id="watcherBubble" role="status">hi, don't make this weird,,</span>
-<span aria-hidden="true" class="watcher-face"><span class="watcher-eyes"><i></i><i></i></span><span class="watcher-mouth"></span></span>
+<span aria-hidden="true" class="watcher-face"><span class="watcher-antenna"></span><span class="watcher-eyes"><i></i><i></i></span><span class="watcher-mouth"></span></span>
 <span aria-hidden="true" class="watcher-caption" id="watcherCaption">HELLO, HUMAN</span>
 </button>
 <div aria-label="Mysterious object menu" class="custom-context-menu" hidden="" id="customContextMenu" role="menu">
